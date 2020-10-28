@@ -59,8 +59,14 @@ void import(char* name)
             insertTreeMap(auxTree,distance,Acity);
             insertMap(cities,Bcity,auxTree);
         }
-        printf("%s\t%s\t%d\n",Acity,Bcity,*distance); //printeo para verificar valores, se eliminara en version final
+        //printf("%s\t%s\t%d\n",Acity,Bcity,*distance); //printeo para verificar valores, se eliminara en version final
     }
+}
+
+void nearest(char* cityName)
+{
+    TreeMap* adjCities = searchMap(cities,cityName);
+    printf("La ciudad mas cercana a %s es %s\n",cityName,(char*)firstTreeMap(adjCities));
 }
 
 void get_adj(char* cityName)

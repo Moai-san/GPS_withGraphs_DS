@@ -9,4 +9,5 @@ int main ()
     /*idea 1: tabla hash con clave ciudad, donde se guarde un arbol con las ciudades adyascentes ordenadas por distancia*/
     init_var();
     import("distances");
+    nearest("Chicago");
 }

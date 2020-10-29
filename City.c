@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "hashtable.h"
 #include "treemap.h"
+#include "list.h"
 
 HashMap* cities;//lista ciudades
 
@@ -69,14 +71,58 @@ void nearest(char* cityName)
     printf("La ciudad mas cercana a %s es %s\n",cityName,(char*)firstTreeMap(adjCities));
 }
 
-void get_adj(char* cityName)
+int get_adj(char* cityName)
 {
     TreeMap* adjCities = searchMap(cities,cityName);
-    TreeNode* currentNode =createTreeNode;
-    currentNode =firstTreeMap(adjCities);
+    TreeNode* currentNode =(TreeNode*)calloc(1,sizeof(TreeNode));
+    firstTreeMap(adjCities);
+    currentNode =adjCities->current;
+    printf("lista de ciudades adyascentes a %s\n",cityName);
+    int pos =0; //posicion en pantalla
     while(currentNode!=NULL)
     {
-        
-        currentNode =nextTreeMap(adjCities);
+        printf("%d - %s\t%d KM\n",pos,(char*)currentNode->value,*(int*)currentNode->key);
+        pos++;
+        nextTreeMap(adjCities);
+        currentNode =adjCities->current;
+    }
+}
+
+void createRoute(char* cityName)
+{
+    int option;
+    int distance =0;
+    TreeNode* currentNode =(TreeNode*)calloc(1,sizeof(TreeNode));
+    TreeMap* adjCities = searchMap(cities,cityName);
+    List* cityList =create_list();
+    while(1)
+    {
+        push_back(cityList,cityName);
+        get_adj(cityName);
+        printf("ingrese numero de la ciudad siguiente,si no quiere seguir añadiendo ciudades a la ruta, escriba -1\n");
+        scanf("%d",&option);
+        if (option==-1)
+        {
+            break;
+        }
+        firstTreeMap(adjCities);
+        currentNode =adjCities->current;
+        for (int i =0;i<option;i =(i+1))
+        {
+            nextTreeMap(adjCities);
+            currentNode =adjCities->current;
+        }
+        distance =distance+(*(int*)currentNode->key);
+        cityName =(char*)currentNode->value;
+        adjCities = searchMap(cities,cityName);
+    }
+    system("reset");
+    printf("Distancia Recorrida: %d KM\n",distance);
+    printf("Ciudades por las que pasaste\n");
+    first(cityList);
+    for(int i =0;i<cityList->count;i =(i+1))
+    {
+        printf("%s\n",(char*)cityList->current->data);
+        next(cityList);
     }
 }

@@ -10,4 +10,6 @@ int main ()
     init_var();
     import("distances");
     nearest("Chicago");
+    createRoute("Chicago");
+    //get_adj("Chicago");
 }

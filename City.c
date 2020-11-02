@@ -4,6 +4,7 @@
 #include "hashtable.h"
 #include "treemap.h"
 #include "list.h"
+#include "mymenu.h"
 
 HashMap* cities;//lista ciudades
 
@@ -14,7 +15,7 @@ void init_var()
     cities =createMap(10);
 }
 
-
+//importa archivo txt
 void import(char* name)
 {
     FILE* input;
@@ -61,68 +62,124 @@ void import(char* name)
             insertTreeMap(auxTree,distance,Acity);
             insertMap(cities,Bcity,auxTree);
         }
-        //printf("%s\t%s\t%d\n",Acity,Bcity,*distance); //printeo para verificar valores, se eliminara en version final
     }
+    fclose(input);
 }
 
+//encuentra ciudad mas cercana
 void nearest(char* cityName)
 {
-    TreeMap* adjCities = searchMap(cities,cityName);
+    TreeMap* adjCities = searchMap(cities,cityName); //arbol con las ciudades adyascentes a la ciudad ingresada
+    if(firstTreeMap(adjCities)==NULL) //si la ciudad no existe, se imprime mensaje de error, si la ciudad existe, se imprime la ciudad mas cercana, osea el primer nodo de nuestro arbol binario, ya que esta ordenado por distancias
+    {
+        printf("Ciudad no se encuentra en la lista de distancias!\n");
+        return;
+    }
     printf("La ciudad mas cercana a %s es %s\n",cityName,(char*)firstTreeMap(adjCities));
 }
 
+//obtiene ciudades adyascentes y las imprime, retorna cantidad de ciudades adyascentes
 int get_adj(char* cityName)
 {
-    TreeMap* adjCities = searchMap(cities,cityName);
-    TreeNode* currentNode =(TreeNode*)calloc(1,sizeof(TreeNode));
-    firstTreeMap(adjCities);
-    currentNode =adjCities->current;
+    TreeMap* adjCities = searchMap(cities,cityName); //arbol de ciudades adyascentes
+    TreeNode* currentNode =(TreeNode*)calloc(1,sizeof(TreeNode)); //nodo actual
+    firstTreeMap(adjCities); //posicionamos la primera posicion del arbol
+    currentNode =adjCities->current; //cambiamos current
     printf("lista de ciudades adyascentes a %s\n",cityName);
     int pos =0; //posicion en pantalla
-    while(currentNode!=NULL)
+    while(currentNode!=NULL) //mientras existan ciudades adyascentes
     {
-        printf("%d - %s\t%d KM\n",pos,(char*)currentNode->value,*(int*)currentNode->key);
-        pos++;
-        nextTreeMap(adjCities);
-        currentNode =adjCities->current;
+        printf("%d - %s\t%d KM\n",pos,(char*)currentNode->value,*(int*)currentNode->key); //imprime numero de opcion, ciudad, y distancia a la ciudad inicial, ejemplo: (0 - Chicago    117 KM)
+        pos++; //aumentamos en uno la opcion impresa en pantalla
+        nextTreeMap(adjCities); //avanzamos en el arbol
+        currentNode =adjCities->current; //cambiamos current
     }
+    return(pos-1); //retornamos cuantas ciudades hay
 }
 
+//crea ruta personalizada desde la ciudad ingresada
 void createRoute(char* cityName)
 {
-    int option;
-    int distance =0;
-    TreeNode* currentNode =(TreeNode*)calloc(1,sizeof(TreeNode));
-    TreeMap* adjCities = searchMap(cities,cityName);
-    List* cityList =create_list();
+    int option; //opcion a seleccionar en el menu
+    int distance =0; //distancia acumulada en la ruta recorrida
+    int valid; //flag para saber si la opcion ingresada es valida
+    TreeNode* currentNode =(TreeNode*)calloc(1,sizeof(TreeNode)); //ciudad actual (al momento de crear la ruta sera la actual, ya que ahora esta vacia)
+    TreeMap* adjCities = searchMap(cities,cityName); //arbol binario de ciudades, con clave la distancia al nodo buscado, ejemplo, si creo ruta desde chicago, este arbol contendra las ciudades adyascentes a chicago
+    if(firstTreeMap(adjCities)==NULL) //si el arbol de ciudades adyascentes esta vacio significa que la ciudad que se buscó, no existe, ya que cada ciudad tiene almenos una adyascente debido a que el archivo contiene pares de ciudades
+    {
+        printf("Ciudad no se encuentra en la lista de distancias!\n");
+        return;
+    }
+    List* cityList =create_list(); //lista de ciudades de la ruta armada (esta se imprimira en pantalla al finalizar la ruta)
     while(1)
     {
-        push_back(cityList,cityName);
-        get_adj(cityName);
+        push_back(cityList,cityName); //ingreso la ciudad actual a la lista de ciudades de la ruta
+        valid =get_adj(cityName); //imprimo las adyascentes a esta, en pantalla para que el usuario seleccione una
         printf("ingrese numero de la ciudad siguiente,si no quiere seguir añadiendo ciudades a la ruta, escriba -1\n");
         scanf("%d",&option);
-        if (option==-1)
+        while (option>valid)
+        {
+            printf("opcion invalida, ingrese numero de la ciudad siguiente,si no quiere seguir añadiendo ciudades a la ruta, escriba -1\n");
+            scanf("%d",&option);
+        }
+        if (option==-1) //si la opcion ingresada por el usuario es -1, detengo el ciclo while ya que la ruta concluyó
         {
             break;
         }
-        firstTreeMap(adjCities);
-        currentNode =adjCities->current;
-        for (int i =0;i<option;i =(i+1))
+        firstTreeMap(adjCities); //obtengo la primera ciudad de la lista de adjuntas ya que asi puedo ir al numero que ingreso el usuario como opcion
+        currentNode =adjCities->current; //pongo de ciudad actual a la primera de la lista de adjuntas
+        for (int i =0;i<option;i =(i+1)) //ciclo for que itera segun el numero ingresado por el usuario, ya que el arbol esta ordenado, por lo cual el numero de opcion se condice con el numero de veces que hago next
         {
             nextTreeMap(adjCities);
             currentNode =adjCities->current;
         }
-        distance =distance+(*(int*)currentNode->key);
-        cityName =(char*)currentNode->value;
+        distance =distance+(*(int*)currentNode->key); //aumento la distancia recorrida (distancia = distancia actual + distancia con la ciudad seleccionada, como el arbol es ordenado por clave, distancia = clave)
+        cityName =(char*)currentNode->value; //se cambia cityname para mostrar el nombre correctamente en pantalla, y hacer la busqueda del siguiente arbol de adyascentes
         adjCities = searchMap(cities,cityName);
     }
-    system("reset");
+    clear_Screen(); //limpieza de pantalla
     printf("Distancia Recorrida: %d KM\n",distance);
     printf("Ciudades por las que pasaste\n");
-    first(cityList);
+    first(cityList); //me sitúo en la ciudad inicial de la lista de ruta, luego con un for y la funcion next imprimo cada ciudad
     for(int i =0;i<cityList->count;i =(i+1))
     {
         printf("%s\n",(char*)cityList->current->data);
         next(cityList);
     }
+}
+
+void shortestRoute(char* originName, char* destinyName)
+{
+    /*si origen y destino son iguales, se imprime que no es necesario moverse, si son distintos debiese usarse un grafo de busqueda e implementar una busqueda en anchura usando
+    nodos con punteros, sin embargo esto ultimo no fue implementado por lo que solo se hizo un printeo*/
+    if(strcmp(originName,destinyName)==0) 
+    {
+        printf("La ruta ingresada no requiere moverse, ya que inicia y termina en %s\n",originName);
+        return;
+    }
+    else
+    {
+        printf("Funcion no implementada completamente\n");
+    }
+    
+    /*node* origin =create_graphNode();
+    strcpy(origin->o_city,originName);
+    strcpy(origin->c_city,originName);
+    strcpy(origin->d_city,destinyName);
+    List* adyascentes =adj_nodes(origin,cities);
+    first(adyascentes);
+    //necesito sumar el origen, con cada uno de sus adyascentes, despues a cada uno de los resultantes necesito sumarle cada uno de los adyascentes
+    //y asi hasta llegar al destino, luego hacer una lista con los nodos finales y sacar el mas conveniente, cada nodo debiera ser una lista para poder reconstruir el camino
+    while (adyascentes->current!=NULL)
+    {
+        DHS((node*)adyascentes->current->data,cities);
+        next(adyascentes);
+    }*/
+    
+}
+
+void bestRoute(char* a,char* b,char* c)
+{
+    printf("No pude implementar la funcion :'C\n");
+    return;
 }
